@@ -1,0 +1,168 @@
+/ runtime for scooma version 0.0.1
+/ 23.05.2019
+/ Gringy egor@kanev.xyz
+
+/ header structure:
+/ 00 link to previous header or 0x00 if last
+/ 01 immediate flag
+/ 02 link for jump
+/ 03 and next - name as null-terminated string 
+
+i lit jump
+r start
+
+: start
+i lit call
+r readline
+i debug
+i lit call
+r s:put
+i lit call
+r nl
+i debug
+i lit jump
+r start
+i bye
+
+/ readline
+/ -- <link to line>
+: readline
+/ at first drop the buffer
+i lit call
+r buff:drop
+/ then read head spaces and drop it
+: readline--drop-spaces
+i get dup lit call
+r space?
+i not lit cjump
+r readline--start-reading
+i drop lit jump
+r readline--drop-spaces
+: readline--start-reading
+/ then read word chars to buffer
+i lit call
+r buff:add
+i get dup lit call
+r space?
+i not lit cjump
+r readline--start-reading
+/ then add link to buffer
+i drop lit call
+r buff:get
+i ret
+
+/ space?
+/ c -- f
+/ 32 - space, 9 - \t, 10 - \n, 13 - \r
+: space?
+i dup lit eq swap
+n 32
+i dup lit eq swap
+n 9
+i dup lit eq swap
+n 10
+i lit eq
+n 13
+i or or or ret
+
+/ nl
+: nl
+i lit emit ret
+n 10
+
+/ inc
+: inc
+i lit add ret
+n 1
+
+/ dec
+: dec
+i lit sub ret
+n 1
+
+C BUFF_START 4096
+
+/ vars
+: Heap
+r image_end
+: Dict
+r word_last
+: Buff
+r BUFF_START
+
+/ s:put
+/ s -- 
+/ puts a string to console
+: s:put
+i dup fetch dup lit
+n 0
+i eq lit cjump
+r s:put:ret
+i emit lit add
+n 1 
+i lit jump
+r s:put
+: s:put:ret
+i drop drop ret
+
+/ buff:add
+: buff:add
+i lit fetch dup push
+r Buff
+i store pop lit add
+n 1
+i dup lit store lit
+r Buff
+n 0
+i swap store ret
+
+/ buff:size
+: buff:size
+i lit fetch lit
+r Buff
+r BUFF_START
+i sub ret
+
+/ buff:get
+: buff:get
+i lit ret
+r BUFF_START
+
+/ buff:drop
+: buff:drop
+i lit lit store ret
+r BUFF_START
+r Buff
+
+/ s:eq?
+: s:eq?
+
+/ ======================
+/ == dict starts here ==
+/ ======================
+: word0
+n 0
+n 0
+r inc
+s inc
+
+: word1
+r word0
+n 0
+r dec
+s dec
+
+: word2
+r word1
+n 0
+r s:put
+s s:put
+
+: word_last
+: word3
+r word2
+n 0
+r space?
+s space?
+
+: image_end
