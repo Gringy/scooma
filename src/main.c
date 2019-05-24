@@ -326,8 +326,6 @@ void vm_prepare() {
 
 	instructions[VM_BYE] = inst_bye;
 	// instructions[VM_] = inst_;
-	// instructions[VM_] = inst_;
-	// instructions[VM_] = inst_;
 }
 
 void vm_parse_args(int argc, char **argv) {
@@ -349,7 +347,7 @@ void vm_parse_args(int argc, char **argv) {
 }
 
 int main(int argc, char **argv) {
-	printf("scooma v0.0.1");
+	printf("scooma v0.0.2\n");
 	vm_parse_args(argc, argv);
 	vm_prepare();
 	if (!vm_load(filename_parameter)) {

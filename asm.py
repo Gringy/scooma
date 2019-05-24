@@ -98,7 +98,7 @@ def writeFile(name):
 	outFile.write(bytearray(memory))
 
 def main():
-	print("asm for scooma v0.0.1")
+	print("asm for scooma v0.0.2")
 	if len(sys.argv) == 2:
 		importCodes()
 		readFile(sys.argv[1])

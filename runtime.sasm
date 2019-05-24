@@ -1,5 +1,5 @@
-/ runtime for scooma version 0.0.1
-/ 23.05.2019
+/ runtime for scooma version 0.0.2
+/ created 23.05.2019
 / Gringy egor@kanev.xyz
 
 / header structure:
@@ -8,20 +8,19 @@
 / 02 link for jump
 / 03 and next - name as null-terminated string 
 
+/ call entry point
 i lit jump
 r start
 
+/ entry point
 : start
 i lit call
-r readline
-i debug
+r dict:words
 i lit call
-r s:put
+r dict:words
 i lit call
-r nl
+r dict:words
 i debug
-i lit jump
-r start
 i bye
 
 / readline
@@ -135,7 +134,64 @@ r BUFF_START
 r Buff
 
 / s:eq?
+/ <str2> <str1> -- <eq?>
 : s:eq?
+i ret
+
+/ dict:next
+: dict:next
+i fetch ret
+
+/ dict:imm?
+: dict:imm?
+i lit add fetch ret
+n 1
+
+/ dict:xt
+: dict:xt
+i lit add fetch ret
+n 2
+
+/ dict:name
+/ <header> -- <name>
+: dict:name
+i lit add ret
+n 3
+
+/ dict:for-each
+/ <quote> --
+: dict:for-each
+i dup push lit fetch
+r Dict
+: dict:for-each--loop
+i dup
+i lit eq lit cjump
+n 0
+r dict:for-each--drop
+i dup
+i pop dup push call
+i fetch lit jump
+r dict:for-each--loop
+: dict:for-each--drop
+i drop drop pop drop
+i ret
+
+/ dict:words
+/ --
+: dict:words
+i lit lit call
+r dict:words--quote
+r dict:for-each
+i lit call
+r nl
+i ret
+: dict:words--quote
+i lit call
+r dict:name
+i lit call
+r s:put
+i lit emit ret
+n 32
 
 / ======================
 / == dict starts here ==
@@ -158,11 +214,59 @@ n 0
 r s:put
 s s:put
 
-: word_last
 : word3
 r word2
 n 0
 r space?
 s space?
+
+: word4
+r word3
+n 0
+r readline
+s readline
+
+: word5
+r word4
+n 0
+r dict:imm?
+s dict:imm?
+
+: word6
+r word5
+n 0
+r dict:xt
+s dict:xt
+
+: word7
+r word6
+n 0
+r dict:name
+s dict:name
+
+: word8
+r word7
+n 0
+r nl
+s nl
+
+: word9
+r word8
+n 0
+r s:eq?
+s s:eq?
+
+: word10
+r word9
+n 0
+r dict:for-each
+s dict:for-each
+
+: word_last
+: word11
+r word10
+n 0
+r dict:words
+s dict:words
 
 : image_end
