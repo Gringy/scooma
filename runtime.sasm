@@ -1,4 +1,4 @@
-/ runtime for scooma version 0.0.5
+/ runtime for scooma version 0.0.6
 / created 23.05.2019
 / Gringy egor@kanev.xyz
 
@@ -29,6 +29,10 @@ r BUFF_START
 / === entry point ===
 / ===================
 : start
+i lit call
+r interpret
+i lit jump
+r start
 i bye
 
 / ====================
@@ -178,8 +182,8 @@ i ret
 : dict:next
 i fetch ret
 
-/ dict:imm?
-: dict:imm?
+/ dict:class
+: dict:class
 i lit add fetch ret
 n 1
 
@@ -260,115 +264,245 @@ i pop drop ret
 / s:to-int
 / <string> -- <result-int> <flag-if-done>
 : s:to-int
-i ret
+i dup fetch lit eq
+/ 45 is '-'
+n 45
+i not lit cjump
+r s:to-int--positive
+/ negative
+i lit push
+n -1
+/ skip dash in the start of string
+i lit add
+n 1
+i lit jump
+r s:to-int--start-loop
+: s:to-int--positive
+i lit push
+n 1
+: s:to-int--start-loop
+i lit swap
+n 0
+/ <number> <str>
+: s:to-int--loop
+i lit call
+r fetch>
+/ <number> <str+1> <char>
+i dup lit eq
+n 0
+i lit cjump
+r s:to-int--success
+i dup lit call
+r number?
+/ <number> <str+1> <char> <is-valid?> 
+i not lit cjump
+r s:to-int--invalid
+i lit sub
+/ 48 is '0'
+n 48
+i rot lit mul add
+n 10
+/ <str+1> <number*10+char>
+i swap lit jump
+r s:to-int--loop
+: s:to-int--success
+i drop drop
+i pop mul lit ret
+n -1
+: s:to-int--invalid
+i pop drop
+i drop drop lit ret
+n 0
 
 / number?
 / <char> -- <flag-if-number>
 : number?
 i dup lit beq
+/ 48 is '0'
 n 48
 i swap lit leq
+/ 57 is '9'
 n 57
 i and ret
+
+/ class:word
+/ <xt> --
+: class:word
+i call
+i ret
+
+/ class:low
+/ <xt> --
+: class:low
+i ret
+
+/ interpret
+/ --
+: interpret
+i lit call
+r s:get
+i dup lit call
+r dict:find
+/ <str> <header>
+i dup lit eq
+n 0
+i lit cjump
+r interpret--number
+i swap drop
+/ <header>
+i dup lit call
+r dict:xt
+i swap lit call
+r dict:class
+i call
+i ret
+
+: interpret--number
+i drop lit call
+r s:to-int
+i not cjump
+r interpret--not-found
+i ret
+
+: interpret--not-found
+i lit lit call
+r str-not-found
+r s:put
+i ret
+
+: str-not-found
+s word not found\n
+
+/ ====================
+/ === native words ===
+/ ====================
+
+: n:put
+i dot ret
+
+: debug
+i debug ret
+
+: bye
+i bye
 
 / ========================
 / === dict starts here ===
 / ========================
 : word0
 n 0
-n 0
+r class:word
 r inc
 s inc
 
 : word1
 r word0
-n 0
+r class:word
 r dec
 s dec
 
 : word2
 r word1
-n 0
+r class:word
 r s:put
 s s:put
 
 : word3
 r word2
-n 0
+r class:word
 r space?
 s space?
 
 : word4
 r word3
-n 0
+r class:word
 r s:get
 s s:get
 
 : word5
 r word4
-n 0
-r dict:imm?
-s dict:imm?
+r class:word
+r dict:class
+s dict:class
 
 : word6
 r word5
-n 0
+r class:word
 r dict:xt
 s dict:xt
 
 : word7
 r word6
-n 0
+r class:word
 r dict:name
 s dict:name
 
 : word8
 r word7
-n 0
+r class:word
 r nl
 s nl
 
 : word9
 r word8
-n 0
+r class:word
 r s:eq?
 s s:eq?
 
 : word10
 r word9
-n 0
+r class:word
 r dict:for-each
 s dict:for-each
 
 : word11
 r word10
-n 0
+r class:word
 r dict:words
 s dict:words
 
 : word12
 r word11
-n 0
+r class:word
 r fetch>
 s fetch>
 
 : word13
 r word12
-n 0
+r class:word
 r s:to-int
 s s:to-int
 
 : word14
 r word13
-n 0
+r class:word
 r dict:find
 s dict:find
 
-: word_last
 : word15
 r word14
-n 0
+r class:word
 r number?
 s number?
+
+: word16
+r word15
+r class:word
+r n:put
+s n:put
+
+: word_last
+: word17
+r word16
+r class:word
+r debug
+s debug
+
+: word_last
+: word18
+r word17
+r class:word
+r bye
+s bye
 
 : image_end
