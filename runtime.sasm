@@ -1,4 +1,4 @@
-/ runtime for scooma version 0.0.3
+/ runtime for scooma version 0.0.4
 / created 23.05.2019
 / Gringy egor@kanev.xyz
 
@@ -12,20 +12,29 @@
 i lit jump
 r start
 
-/ entry point
+/ ===============================
+/ === variables and constants ===
+/ ===============================
+C BUFF_START 4096
+
+/ vars
+: Heap
+r image_end
+: Dict
+r word_last
+: Buff
+r BUFF_START
+
+/ ===================
+/ === entry point ===
+/ ===================
 : start
-i lit call
-r s:get
-i lit lit call
-r exit-string
-r s:eq?
-i not lit cjump
-r start
-i debug
+
 i bye
 
-: exit-string
-s exit!
+/ ====================
+/ === common words ===
+/ ====================
 
 / s:get
 / -- <link to line>
@@ -82,16 +91,6 @@ n 1
 : dec
 i lit sub ret
 n 1
-
-C BUFF_START 4096
-
-/ vars
-: Heap
-r image_end
-: Dict
-r word_last
-: Buff
-r BUFF_START
 
 / s:put
 / s -- 
@@ -231,9 +230,28 @@ r s:put
 i lit emit ret
 n 32
 
-/ ======================
-/ == dict starts here ==
-/ ======================
+/ dict:find
+/ <name> -- <header address>
+: dict:find
+i ret
+
+/ s:to-int
+/ <string> -- <result-int> <flag-if-done>
+: s:to-int
+i ret
+
+/ number?
+/ <char> -- <flag-if-number>
+: number?
+i dup lit beq
+n 48
+i swap lit leq
+n 57
+i and ret
+
+/ ========================
+/ === dict starts here ===
+/ ========================
 : word0
 n 0
 n 0
@@ -300,11 +318,35 @@ n 0
 r dict:for-each
 s dict:for-each
 
-: word_last
 : word11
 r word10
 n 0
 r dict:words
 s dict:words
+
+: word12
+r word11
+n 0
+r fetch>
+s fetch>
+
+: word13
+r word12
+n 0
+r s:to-int
+s s:to-int
+
+: word14
+r word13
+n 0
+r dict:find
+s dict:find
+
+: word_last
+: word15
+r word14
+n 0
+r number?
+s number?
 
 : image_end
