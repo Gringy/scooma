@@ -1,4 +1,4 @@
-/ runtime for scooma version 0.0.4
+/ runtime for scooma version 0.0.5
 / created 23.05.2019
 / Gringy egor@kanev.xyz
 
@@ -29,7 +29,6 @@ r BUFF_START
 / === entry point ===
 / ===================
 : start
-
 i bye
 
 / ====================
@@ -233,7 +232,30 @@ n 32
 / dict:find
 / <name> -- <header address>
 : dict:find
-i ret
+i push lit fetch
+r Dict
+: dict:find--loop
+/ header
+i dup lit eq
+n 0
+/ header <is-last-word?>
+i lit cjump
+r dict:find--success
+i dup lit call
+r dict:name
+/ header header-name
+i pop dup push
+/ header header-name <name>
+i lit call
+r s:eq?
+/ header <eq?>
+i lit cjump
+r dict:find--success
+/ not equal, go to next header
+i fetch lit jump
+r dict:find--loop
+: dict:find--success
+i pop drop ret
 
 / s:to-int
 / <string> -- <result-int> <flag-if-done>
