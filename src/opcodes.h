@@ -3,52 +3,53 @@
 
 enum vm_opcode {
 	// system
-	VM_NOP, /*0x00*/
-	VM_LIT, /*0x01*/ 
+	VM_NOP,
+	VM_LIT,
 	// arithmetic
-	VM_ADD, /*0x02*/ 
-	VM_SUB, /*0x03*/
-	VM_MUL, /*0x04*/
-	VM_DIV, /*0x05*/
-	VM_MOD, /*0x06*/
+	VM_ADD,
+	VM_SUB,
+	VM_MUL,
+	VM_DIV,
+	VM_MOD,
 	// logic
-	VM_NOT, /*0x07*/
-	VM_AND, /*0x08*/
-	VM_OR,  /*0x09*/
-	VM_XOR, /*0x0A*/
+	VM_NOT,
+	VM_AND,
+	VM_OR,
+	VM_XOR,
 	// comparation
-	VM_EQ,  /*0x0B*/
-	VM_NEQ, /*0x0C*/
-	VM_LT,  /*0x0D*/
-	VM_BT,  /*0x0E*/
-	VM_LEQ, /*0x0F*/
-	VM_BEQ, /*0x10*/
+	VM_EQ,
+	VM_NEQ,
+	VM_LT,
+	VM_BT,
+	VM_LEQ,
+	VM_BEQ,
 	// stack
-	VM_DROP,/*0x11*/
-	VM_DUP, /*0x12*/
-	VM_NIP, /*0x13*/
-	VM_SWAP,/*0x14*/
-	VM_ROT, /*0x15*/
-	VM_MROT,/*0x16*/
+	VM_DROP,
+	VM_DUP,
+	VM_NIP,
+	VM_SWAP,
+	VM_OVER,
+	VM_ROT,
+	VM_MROT,
 	// rstack
-	VM_PUSH,/*0x17*/
-	VM_POP, /*0x18*/
+	VM_PUSH,
+	VM_POP,
 	// memory
-	VM_FETCH,/*0x19*/
-	VM_STORE,/*0x1A*/
+	VM_FETCH,
+	VM_STORE,
 	// control flow
-	VM_JUMP,/*0x1B*/
-	VM_CJUMP,/*0x1C*/
-	VM_CALL,/*0x1D*/
-	VM_CCALL,/*0x1E*/
-	VM_RET, /*0x1F*/
+	VM_JUMP,
+	VM_CJUMP,
+	VM_CALL,
+	VM_CCALL,
+	VM_RET,
 	// io
-	VM_DOT, /*0x20*/
-	VM_EMIT,/*0x21*/
-	VM_GET, /*0x22*/
-	VM_DEBUG, /*0x23*/
+	VM_DOT,
+	VM_EMIT,
+	VM_GET,
+	VM_DEBUG,
 	// exit
-	VM_BYE /*0x24*/
+	VM_BYE 
 };
 #define NUM_OPS (VM_BYE+1)
 
@@ -74,6 +75,7 @@ char *names[] = {
 	"VM_DUP", 
 	"VM_NIP", 
 	"VM_SWAP",
+	"VM_OVER",
 	"VM_ROT", 
 	"VM_MROT",
 	"VM_PUSH",

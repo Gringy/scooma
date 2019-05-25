@@ -1,4 +1,4 @@
-/ runtime for scooma version 0.0.2
+/ runtime for scooma version 0.0.3
 / created 23.05.2019
 / Gringy egor@kanev.xyz
 
@@ -15,36 +15,40 @@ r start
 / entry point
 : start
 i lit call
-r dict:words
-i lit call
-r dict:words
-i lit call
-r dict:words
+r s:get
+i lit lit call
+r exit-string
+r s:eq?
+i not lit cjump
+r start
 i debug
 i bye
 
-/ readline
+: exit-string
+s exit!
+
+/ s:get
 / -- <link to line>
-: readline
+: s:get
 / at first drop the buffer
 i lit call
 r buff:drop
 / then read head spaces and drop it
-: readline--drop-spaces
+: s:get--drop-spaces
 i get dup lit call
 r space?
 i not lit cjump
-r readline--start-reading
+r s:get--start-reading
 i drop lit jump
-r readline--drop-spaces
-: readline--start-reading
+r s:get--drop-spaces
+: s:get--start-reading
 / then read word chars to buffer
 i lit call
 r buff:add
 i get dup lit call
 r space?
 i not lit cjump
-r readline--start-reading
+r s:get--start-reading
 / then add link to buffer
 i drop lit call
 r buff:get
@@ -133,9 +137,43 @@ i lit lit store ret
 r BUFF_START
 r Buff
 
+/ fetch>
+/ <pointer> -- <pointer+1> <cell>
+: fetch>
+i dup lit add swap
+n 1
+i fetch ret
+
 / s:eq?
 / <str2> <str1> -- <eq?>
 : s:eq?
+i lit call
+r fetch>
+/ stack here: <str2> <str1+1> <ch1>
+i rot lit call
+r fetch>
+/ stack here: <str1+1> <ch1> <str2+1> <ch2>
+i rot
+/ stack here: <str1+1> <str2+1> <ch2> <ch1>
+i over over eq
+/ stack here: <str1+1> <str2+1> <ch2> <ch1> <eq?>
+i lit cjump
+r s:eq?--char-eq
+/ char is not equal: drop all and exit
+i drop drop drop drop
+i lit ret
+n 0
+: s:eq?--char-eq
+/ stack here: <str1+1> <str2+1> <ch2> <ch1>
+i drop lit eq
+n 0
+/ stack here: <str1+1> <str2+1> <is-zero?>
+/ if not end of line - go to start of word
+i not lit cjump
+r s:eq?
+/ else return true
+i drop drop lit ret
+n -1
 i ret
 
 / dict:next
@@ -223,8 +261,8 @@ s space?
 : word4
 r word3
 n 0
-r readline
-s readline
+r s:get
+s s:get
 
 : word5
 r word4

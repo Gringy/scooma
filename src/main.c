@@ -133,6 +133,10 @@ void inst_swap() {
 	stack[sp-1] = under;
 	stack[sp-2] = top;
 }
+void inst_over() {
+	CELL under = stack[sp-2];
+	stack[sp++] = under;
+}
 void inst_rot() {
 	// a b c -- b c a
 	CELL top1 = stack[sp-1];
@@ -304,6 +308,7 @@ void vm_prepare() {
 	instructions[VM_DUP] = inst_dup;
 	instructions[VM_NIP] = inst_nip;
 	instructions[VM_SWAP] = inst_swap;
+	instructions[VM_OVER] = inst_over;
 	instructions[VM_ROT] = inst_rot;
 	instructions[VM_MROT] = inst_mrot;
 
@@ -347,7 +352,7 @@ void vm_parse_args(int argc, char **argv) {
 }
 
 int main(int argc, char **argv) {
-	printf("scooma v0.0.2\n");
+	printf("scooma v0.0.3\n");
 	vm_parse_args(argc, argv);
 	vm_prepare();
 	if (!vm_load(filename_parameter)) {
