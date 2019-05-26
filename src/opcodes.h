@@ -53,7 +53,7 @@ enum vm_opcode {
 };
 #define NUM_OPS (VM_BYE+1)
 
-char *names[] = {
+const char *names[] = {
 	"VM_NOP",
 	"VM_LIT",
 	"VM_ADD", 

@@ -1,4 +1,4 @@
-/ runtime for scooma version 0.0.7
+/ runtime for scooma version 0.0.8
 / created 23.05.2019
 / Gringy egor@kanev.xyz
 
@@ -348,18 +348,36 @@ i ret
 : class:primitive-only--error
 s this word can be only compiled, not interpreted\n
 
+: interpret--prefix-string
+s prefix:
+n 0
+
 / interpret
 / --
 : interpret
 i lit call
 r s:get
+/ <name>
+i dup fetch
+/ <name> <first-char>
+i lit lit add store
+r interpret--prefix-string
+n 7
+i lit lit call
+r interpret--prefix-string
+r dict:find
+/ <name> <prefix-header>
+i dup lit cjump
+r interpret--prefix
+i drop
+
 i dup lit call
 r dict:find
 / <str> <header>
 i dup lit eq
 n 0
 i lit cjump
-r interpret--number
+r interpret--not-found
 i swap drop
 / <header>
 i dup lit call
@@ -369,11 +387,13 @@ r dict:class
 i call
 i ret
 
-: interpret--number
-i drop lit call
-r s:to-int
-i not lit cjump
-r interpret--not-found
+/ <name> <prefix-header>
+: interpret--prefix
+i swap lit add swap
+n 1
+i lit call
+r dict:xt
+i call
 i ret
 
 : interpret--not-found
@@ -385,6 +405,24 @@ i ret
 
 : str-not-found
 s word not found\n
+
+/ <string> -- <number>
+: prefix:#
+i lit call
+r s:to-int
+i not lit cjump
+r prefix:#--error
+i ret
+
+: prefix:#--error
+i lit lit call
+r prefix:#--bad
+r s:put
+i drop
+i ret
+
+: prefix:#--bad
+s bad number\n
 
 / ====================
 / === native words ===
@@ -601,6 +639,7 @@ HEADER class:word    dict:name     dict:name
 HEADER class:word    dict:for-each dict:for-each
 HEADER class:word    dict:words    dict:words
 HEADER class:word    dict:find     dict:find
+HEADER class:word    prefix:#      prefix:#
 HEADER class:word    nl            nl
 HEADER class:word    fetch>        fetch>
 HEADER class:word    n:put         n:put
