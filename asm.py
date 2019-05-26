@@ -27,10 +27,18 @@ def compile(num):
 	place()
 	compileAt(len(memory)-4, num)
 
+def compile_string(str):
+	for ch in str:
+		compile(ord(ch))
+	compile(0)
+
+def top():
+	return len(memory) / 4
 
 def readFile(name):
 	asmFile = open(name, "r")
 	lineno = 1
+	current_header = 0
 	for line in asmFile:
 		words = line.split()
 		if len(words) == 0:
@@ -67,16 +75,14 @@ def readFile(name):
 			link = line[2:].strip()
 			links[link] = len(memory)/4
 		elif words[0] == "s":
-			str = line[2:]
-			if len(str) > 0 and str[-1] == "\n":
-				str = str[:-1]
-			str = str.replace("\\n", "\n")
-			for ch in str:
-				compile(ord(ch))
-			compile(0)
+			string = line[2:]
+			if len(string) > 0 and string[-1] == "\n":
+				string = string[:-1]
+			string = string.replace("\\n", "\n")
+			compile_string(string)
 		elif words[0] == "/":
 			pass
-		elif words[0] == "C":
+		elif words[0] == "CONST":
 			if len(words) != 3:
 				print("wrong const: line {}".format(lineno))
 				exit(1)
@@ -84,6 +90,31 @@ def readFile(name):
 				links[words[1]] = int(words[2])
 			except:
 				print("wrong number in const: line {}".format(lineno))
+		elif words[0] == "HEADER":
+			# HEADER class:word xt name
+			if len(words) != 4:
+				print("bad header: line {0}", lineno)
+				exit(1)
+			word_class = words[1]
+			xt = words[2]
+			name = words[3]
+
+
+			links["word" + str(current_header)] = top()
+			links["word_last"] = top()
+			# link to prev header
+			if current_header != 0:
+				places[top()] = "word" + str(current_header-1)
+			place()
+			# word class
+			places[top()] = word_class
+			place()
+			# xt
+			places[top()] = xt
+			place()
+			# name
+			compile_string(name)
+			current_header = current_header + 1
 		else:
 			print("unknown directive {}: line {}".format(words[0], lineno))
 			exit(1)
@@ -98,7 +129,7 @@ def writeFile(name):
 	outFile.write(bytearray(memory))
 
 def main():
-	print("asm for scooma v0.0.6")
+	print("asm for scooma v0.0.7")
 	if len(sys.argv) == 2:
 		importCodes()
 		readFile(sys.argv[1])

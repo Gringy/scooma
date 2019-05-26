@@ -352,7 +352,7 @@ void vm_parse_args(int argc, char **argv) {
 }
 
 int main(int argc, char **argv) {
-	printf("scooma v0.0.6\n");
+	printf("scooma v0.0.7\n");
 	vm_parse_args(argc, argv);
 	vm_prepare();
 	if (!vm_load(filename_parameter)) {

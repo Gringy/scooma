@@ -1,4 +1,4 @@
-/ runtime for scooma version 0.0.6
+/ runtime for scooma version 0.0.7
 / created 23.05.2019
 / Gringy egor@kanev.xyz
 
@@ -8,14 +8,14 @@
 / 02 link for jump
 / 03 and next - name as null-terminated string 
 
-/ call entry point
+/ jump to entry point
 i lit jump
 r start
 
 / ===============================
 / === variables and constants ===
 / ===============================
-C BUFF_START 4096
+CONST BUFF_START 4096
 
 / vars
 : Heap
@@ -331,10 +331,22 @@ i and ret
 i call
 i ret
 
-/ class:low
+/ class:primitive
 / <xt> --
-: class:low
+: class:primitive
+i call
 i ret
+
+/ class:primitive-only
+/ <xt> --
+: class:primitive-only
+i drop lit lit call
+r class:primitive-only--error
+r s:put
+i ret
+
+: class:primitive-only--error
+s this word can be only compiled, not interpreted\n
 
 / interpret
 / --
@@ -360,11 +372,12 @@ i ret
 : interpret--number
 i drop lit call
 r s:to-int
-i not cjump
+i not lit cjump
 r interpret--not-found
 i ret
 
 : interpret--not-found
+i drop drop
 i lit lit call
 r str-not-found
 r s:put
@@ -376,133 +389,220 @@ s word not found\n
 / ====================
 / === native words ===
 / ====================
+: pr-nop
+i nop
+i ret
+
+: pr-lit
+i lit
+i bye
+
+: pr-add
+i add
+i ret
+
+: pr-sub
+i sub
+i ret
+
+: pr-mul
+i mul
+i ret
+
+: pr-div
+i div
+i ret
+
+: pr-mod
+i mod
+i ret
+
+: pr-not
+i not
+i ret
+
+: pr-and
+i and
+i ret
+
+: pr-or
+i or
+i ret
+
+: pr-xor
+i xor
+i ret
+
+: pr-eq
+i eq
+i ret
+
+: pr-neq
+i neq
+i ret
+
+: pr-lt
+i lt
+i ret
+
+: pr-bt
+i bt
+i ret
+
+: pr-leq
+i leq
+i ret
+
+: pr-beq
+i beq
+i ret
+
+: pr-drop
+i drop
+i ret
+
+: pr-dup
+i dup
+i ret
+
+: pr-nip
+i nip
+i ret
+
+: pr-swap
+i swap
+i ret
+
+: pr-over
+i over
+i ret
+
+: pr-rot
+i rot
+i ret
+
+: pr-mrot
+i mrot
+i ret
+
+: pr-push
+i push
+i ret
+
+: pr-pop
+i pop
+i ret
+
+: pr-fetch
+i fetch
+i ret
+
+: pr-store
+i store
+i ret
+
+: pr-jump
+i jump
+i ret
+
+: pr-cjump
+i cjump
+i ret
+
+: pr-call
+i call
+i ret
+
+: pr-ccall
+i ccall
+i ret
+
+: pr-ret
+i ret
+i ret
+
+: pr-dot
+i dot
+i ret
+
+: pr-emit
+i emit
+i ret
+
+: pr-get
+i get
+i ret
+
+: pr-debug
+i debug
+i ret
+
+: pr-bye
+i bye
+i ret
 
 : n:put
 i dot ret
 
-: debug
-i debug ret
-
-: bye
-i bye
-
 / ========================
 / === dict starts here ===
 / ========================
-: word0
-n 0
-r class:word
-r inc
-s inc
+HEADER class:primitive      pr-nop   nop
+HEADER class:primitive-only pr-lit   lit
+HEADER class:primitive      pr-add   +
+HEADER class:primitive      pr-sub   -
+HEADER class:primitive      pr-mul   *
+HEADER class:primitive      pr-div   /
+HEADER class:primitive      pr-mod   %
+HEADER class:primitive      pr-not   not
+HEADER class:primitive      pr-and   and
+HEADER class:primitive      pr-or    or
+HEADER class:primitive      pr-xor   xor
+HEADER class:primitive      pr-eq    ==
+HEADER class:primitive      pr-neq   !=
+HEADER class:primitive      pr-lt    <
+HEADER class:primitive      pr-bt    >
+HEADER class:primitive      pr-leq   <=
+HEADER class:primitive      pr-beq   >=
+HEADER class:primitive      pr-drop  drop
+HEADER class:primitive      pr-dup   dup
+HEADER class:primitive      pr-nip   nip
+HEADER class:primitive      pr-swap  swap
+HEADER class:primitive      pr-over  over
+HEADER class:primitive      pr-rot   rot
+HEADER class:primitive      pr-mrot  mrot
+HEADER class:primitive-only pr-push  push
+HEADER class:primitive-only pr-pop   pop
+HEADER class:primitive      pr-fetch fetch
+HEADER class:primitive      pr-store store
+HEADER class:primitive-only pr-jump  jump
+HEADER class:primitive-only pr-cjump cjump
+HEADER class:primitive-only pr-call  call
+HEADER class:primitive-only pr-ccall ccall
+HEADER class:primitive-only pr-ret   ret
+HEADER class:primitive      pr-dot   dot
+HEADER class:primitive      pr-emit  emit
+HEADER class:primitive      pr-get   get
+HEADER class:primitive      pr-debug debug
+HEADER class:primitive      pr-bye   bye
 
-: word1
-r word0
-r class:word
-r dec
-s dec
-
-: word2
-r word1
-r class:word
-r s:put
-s s:put
-
-: word3
-r word2
-r class:word
-r space?
-s space?
-
-: word4
-r word3
-r class:word
-r s:get
-s s:get
-
-: word5
-r word4
-r class:word
-r dict:class
-s dict:class
-
-: word6
-r word5
-r class:word
-r dict:xt
-s dict:xt
-
-: word7
-r word6
-r class:word
-r dict:name
-s dict:name
-
-: word8
-r word7
-r class:word
-r nl
-s nl
-
-: word9
-r word8
-r class:word
-r s:eq?
-s s:eq?
-
-: word10
-r word9
-r class:word
-r dict:for-each
-s dict:for-each
-
-: word11
-r word10
-r class:word
-r dict:words
-s dict:words
-
-: word12
-r word11
-r class:word
-r fetch>
-s fetch>
-
-: word13
-r word12
-r class:word
-r s:to-int
-s s:to-int
-
-: word14
-r word13
-r class:word
-r dict:find
-s dict:find
-
-: word15
-r word14
-r class:word
-r number?
-s number?
-
-: word16
-r word15
-r class:word
-r n:put
-s n:put
-
-: word_last
-: word17
-r word16
-r class:word
-r debug
-s debug
-
-: word_last
-: word18
-r word17
-r class:word
-r bye
-s bye
+/ high-level word headers
+HEADER class:word    inc           inc
+HEADER class:word    dec           dec
+HEADER class:word    s:put         s:put
+HEADER class:word    space?        space?
+HEADER class:word    number?       number?
+HEADER class:word    s:get         s:get
+HEADER class:word    s:eq?         s:eq?
+HEADER class:word    s:to-int      s:to-int
+HEADER class:word    dict:class    dict:class
+HEADER class:word    dict:xt       dict:xt
+HEADER class:word    dict:name     dict:name
+HEADER class:word    dict:for-each dict:for-each
+HEADER class:word    dict:words    dict:words
+HEADER class:word    dict:find     dict:find
+HEADER class:word    nl            nl
+HEADER class:word    fetch>        fetch>
+HEADER class:word    n:put         n:put
 
 : image_end
