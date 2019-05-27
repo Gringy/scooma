@@ -231,6 +231,7 @@ void inst_debug() {
 }
 void inst_bye() {
 	ip = MEMORY_SIZE;
+	printf("bye!\n");
 }
 
 Op instructions[NUM_OPS];
@@ -352,7 +353,7 @@ void vm_parse_args(int argc, char **argv) {
 }
 
 int main(int argc, char **argv) {
-	printf("scooma v0.0.8\n");
+	printf("scooma v0.0.9\n");
 	vm_parse_args(argc, argv);
 	vm_prepare();
 	if (!vm_load(filename_parameter)) {

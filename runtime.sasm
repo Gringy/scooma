@@ -1,10 +1,10 @@
-/ runtime for scooma version 0.0.8
+/ runtime for scooma version 0.0.9
 / created 23.05.2019
 / Gringy egor@kanev.xyz
 
 / header structure:
 / 00 link to previous header or 0x00 if last
-/ 01 immediate flag
+/ 01 word class
 / 02 link for jump
 / 03 and next - name as null-terminated string 
 
@@ -18,12 +18,14 @@ r start
 CONST BUFF_START 4096
 
 / vars
-: Heap
+: Here
 r image_end
 : Dict
 r word_last
 : Buff
 r BUFF_START
+: Comp
+n 0
 
 / ===================
 / === entry point ===
@@ -325,27 +327,60 @@ i swap lit leq
 n 57
 i and ret
 
+/ class:macro
+/ <xt> --
+: class:macro
+i call
+i ret
+
 / class:word
 / <xt> --
 : class:word
+i lit fetch
+r Comp
+i lit cjump
+r class:word--compile
 i call
+i ret
+: class:word--compile
+i lit lit call
+i lit call
+r compile:cell
+i lit call
+r compile:cell
 i ret
 
 / class:primitive
 / <xt> --
 : class:primitive
+i lit fetch
+r Comp
+i lit cjump
+r class:primitive--compile
 i call
+i ret
+: class:primitive--compile
+i fetch lit call
+r compile:cell
 i ret
 
 / class:primitive-only
 / <xt> --
 : class:primitive-only
-i drop lit lit call
+i lit fetch
+r Comp
+i not lit ccall
 r class:primitive-only--error
+i fetch lit call
+r compile:cell
+i ret
+: class:primitive-only--error
+i drop lit lit call
+r class:primitive-only--error-string
 r s:put
 i ret
 
-: class:primitive-only--error
+: class:primitive-only--error-string
 s this word can be only compiled, not interpreted\n
 
 : interpret--prefix-string
@@ -406,23 +441,159 @@ i ret
 : str-not-found
 s word not found\n
 
+/ prefix:#
 / <string> -- <number>
 : prefix:#
 i lit call
 r s:to-int
+/ <number> <flag>
 i not lit cjump
 r prefix:#--error
+/ <number>
+i lit fetch
+r Comp
+/ <number> <Comp>
+i lit cjump
+r prefix:#--compile
+/ leave int in stack
+i ret
+
+: prefix:#--compile
+i lit lit call
+i lit
+r compile:cell
+i lit call
+r compile:cell
 i ret
 
 : prefix:#--error
 i lit lit call
-r prefix:#--bad
+r prefix:#--error-string
 r s:put
 i drop
 i ret
 
-: prefix:#--bad
+: prefix:#--error-string
 s bad number\n
+
+/ prefix::
+/ <string> --
+: prefix::
+i lit lit lit call
+n 0
+r class:word
+r compile:new-word
+i lit lit store ret
+n -1
+r Comp
+
+/ ;
+/ --
+: ;
+i lit lit call
+i ret
+r compile:cell
+i lit lit store ret
+n 0
+r Comp
+
+: compile:cell
+/ <n> -- 
+i lit call
+r here
+i store
+i lit fetch lit add
+r Here
+n 1
+i lit store ret
+r Here
+
+: compile:string
+/ <string> --
+i lit call
+r fetch>
+/ <string> <char>
+i dup lit call
+r compile:cell
+/ <string> <char>
+i lit eq lit cjump
+n 0
+r compile:string--end
+i lit jump
+r compile:string
+: compile:string--end
+i drop ret
+
+: compile:header
+/ <name-string> <xt> <class> -- <&xt>
+i lit call
+r here
+i push
+i lit fetch
+r Dict
+/ compile prev header link
+i lit call
+r compile:cell
+/ new last header
+i pop dup push
+i lit store
+r Dict
+/ compile class
+i lit call
+r compile:cell
+/ compile xt
+i lit call
+r compile:cell
+/ compile name
+i lit call
+r compile:string
+i pop 
+i lit add ret
+n 2
+
+: compile:new-word
+/ <name-string> <xt> <class> --
+i lit call
+r compile:header
+i lit call
+r here
+i swap store ret
+
+/ REMOVE IT!
+: dump-last
+i lit lit call
+r image_end
+r dump
+i ret
+
+: dump
+/ <address> --
+i lit
+n 20
+i swap
+/ i a
+: dump--loop
+i lit call
+r fetch>
+i dot lit emit
+n 32
+/ i a
+i swap lit sub dup
+n 1
+/ a i i
+i lit eq
+n 0
+i lit cjump
+r dump--ret
+i swap lit jump
+r dump--loop
+: dump--ret
+i drop drop ret
+
+: here
+/ -- <here>
+i lit fetch ret
+r Here
 
 / ====================
 / === native words ===
@@ -625,23 +796,31 @@ HEADER class:primitive      pr-debug debug
 HEADER class:primitive      pr-bye   bye
 
 / high-level word headers
-HEADER class:word    inc           inc
-HEADER class:word    dec           dec
-HEADER class:word    s:put         s:put
-HEADER class:word    space?        space?
-HEADER class:word    number?       number?
-HEADER class:word    s:get         s:get
-HEADER class:word    s:eq?         s:eq?
-HEADER class:word    s:to-int      s:to-int
-HEADER class:word    dict:class    dict:class
-HEADER class:word    dict:xt       dict:xt
-HEADER class:word    dict:name     dict:name
-HEADER class:word    dict:for-each dict:for-each
-HEADER class:word    dict:words    dict:words
-HEADER class:word    dict:find     dict:find
-HEADER class:word    prefix:#      prefix:#
-HEADER class:word    nl            nl
-HEADER class:word    fetch>        fetch>
-HEADER class:word    n:put         n:put
+HEADER class:word    dump             dump
+HEADER class:word    inc              inc
+HEADER class:word    dec              dec
+HEADER class:word    s:put            s:put
+HEADER class:word    space?           space?
+HEADER class:word    number?          number?
+HEADER class:word    s:get            s:get
+HEADER class:word    s:eq?            s:eq?
+HEADER class:word    s:to-int         s:to-int
+HEADER class:word    dict:class       dict:class
+HEADER class:word    dict:xt          dict:xt
+HEADER class:word    dict:name        dict:name
+HEADER class:word    dict:for-each    dict:for-each
+HEADER class:word    dict:words       dict:words
+HEADER class:word    dict:find        dict:find
+HEADER class:word    compile:string   compile:string
+HEADER class:word    compile:cell     compile:cell
+HEADER class:word    compile:header   compile:header
+HEADER class:word    compile:new-word compile:new-word
+HEADER class:word    here             here
+HEADER class:word    prefix:#         prefix:#
+HEADER class:word    prefix::         prefix::
+HEADER class:macro   ;                ;
+HEADER class:word    nl               nl
+HEADER class:word    fetch>           fetch>
+HEADER class:word    n:put            n:put
 
 : image_end
