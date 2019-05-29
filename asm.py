@@ -45,10 +45,10 @@ def readFile(name):
 			pass
 		elif words[0] == "i":
 			if (len(words) <= 1):
-				print("too few words in instruction: line {}".format(lineno))
+				print("too few words in instruction: line {0}".format(lineno))
 				exit(1)
 			if len(words) > 5:
-				print("too much words in instruction: line {}".format(lineno))
+				print("too much words in instruction: line {0}".format(lineno))
 				exit(1)
 			compiled = 0
 			for word in words[1:]:
@@ -56,7 +56,7 @@ def readFile(name):
 					memory.append(codes.index(word.upper()))
 					compiled += 1
 				except:
-					print("wrong command name {}: line {}".format(word, lineno))
+					print("wrong command name {0}: line {1}".format(word, lineno))
 					exit(1)
 			for i in range(4-compiled):
 				memory.append(codes.index("NOP"))
@@ -64,7 +64,7 @@ def readFile(name):
 			try:
 				num = int(words[1])
 			except:
-				print("wrong number: line {}".format(lineno))
+				print("wrong number: line {0}".format(lineno))
 				exit(1)
 			compile(num)
 		elif words[0] == "r":
@@ -84,12 +84,12 @@ def readFile(name):
 			pass
 		elif words[0] == "CONST":
 			if len(words) != 3:
-				print("wrong const: line {}".format(lineno))
+				print("wrong const: line {0}".format(lineno))
 				exit(1)
 			try:
 				links[words[1]] = int(words[2])
 			except:
-				print("wrong number in const: line {}".format(lineno))
+				print("wrong number in const: line {0}".format(lineno))
 		elif words[0] == "HEADER":
 			# HEADER class:word xt name
 			if len(words) != 4:
@@ -116,26 +116,31 @@ def readFile(name):
 			compile_string(name)
 			current_header = current_header + 1
 		else:
-			print("unknown directive {}: line {}".format(words[0], lineno))
+			print("unknown directive {0}: line {1}".format(words[0], lineno))
 			exit(1)
 		lineno += 1
 
 def passLinks():
 	for address in places:
-		compileAt(address*4, links[places[address]])
+		needed = places[address]
+		try:
+			compileAt(address*4, links[needed])
+		except:
+			print("there is no links with name {0}".format(needed))
+			exit(1)
 
 def writeFile(name):
 	outFile = open(name, "wb")
 	outFile.write(bytearray(memory))
 
 def main():
-	print("asm for scooma v0.0.9")
+	print("asm for scooma v0.0.10")
 	if len(sys.argv) == 2:
 		importCodes()
 		readFile(sys.argv[1])
 		passLinks()
 		writeFile("image.bin")
-		print("compiled {} cells ({} bytes)".format(len(memory)/4, len(memory)))
+		print("compiled {0} cells ({1} bytes)".format(len(memory)/4, len(memory)))
 	else:
 		print("pass asm file to compile it")
 		exit(1)

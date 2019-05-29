@@ -1,4 +1,4 @@
-/ runtime for scooma version 0.0.9
+/ runtime for scooma version 0.0.10
 / created 23.05.2019
 / Gringy egor@kanev.xyz
 
@@ -123,6 +123,26 @@ r Buff
 n 0
 i swap store ret
 
+/ buff:pop
+/ -- <top-of-buffer>
+: buff:pop
+i lit fetch
+r Buff
+i lit sub
+n 1
+i dup fetch
+i swap
+i lit store
+r Buff
+i ret
+
+: buff:empty?
+/ -- <is_empty>
+i lit fetch lit eq
+r Buff
+r BUFF_START
+i ret
+
 / buff:size
 : buff:size
 i lit fetch lit
@@ -137,9 +157,13 @@ r BUFF_START
 
 / buff:drop
 : buff:drop
-i lit lit store ret
+i lit lit store
 r BUFF_START
 r Buff
+i lit lit store
+n 0
+r BUFF_START
+i ret
 
 / fetch>
 / <pointer> -- <pointer+1> <cell>
@@ -453,18 +477,11 @@ r prefix:#--error
 i lit fetch
 r Comp
 / <number> <Comp>
-i lit cjump
-r prefix:#--compile
+i lit ccall
+r compile:lit
 / leave int in stack
 i ret
 
-: prefix:#--compile
-i lit lit call
-i lit
-r compile:cell
-i lit call
-r compile:cell
-i ret
 
 : prefix:#--error
 i lit lit call
@@ -475,6 +492,19 @@ i ret
 
 : prefix:#--error-string
 s bad number\n
+
+/ prefix:$
+/ <string> -- <char>
+: prefix:$
+i fetch
+/ <char>
+i lit fetch
+r Comp
+/ <char> <Comp>
+i lit ccall
+r compile:lit
+/ leave int in stack
+i ret
 
 / prefix::
 / <string> --
@@ -507,6 +537,15 @@ r Here
 n 1
 i lit store ret
 r Here
+
+: compile:lit
+/ <n> --
+i lit lit call
+i lit
+r compile:cell
+i lit call
+r compile:cell
+i ret
 
 : compile:string
 / <string> --
@@ -559,13 +598,6 @@ i lit call
 r here
 i swap store ret
 
-/ REMOVE IT!
-: dump-last
-i lit lit call
-r image_end
-r dump
-i ret
-
 : dump
 / <address> --
 i lit
@@ -575,7 +607,9 @@ i swap
 : dump--loop
 i lit call
 r fetch>
-i dot lit emit
+i lit call
+r n:put
+i lit emit
 n 32
 / i a
 i swap lit sub dup
@@ -595,6 +629,50 @@ i drop drop ret
 i lit fetch ret
 r Here
 
+: n:put
+/ <number> --
+i lit call
+r buff:drop
+/ sign
+i dup lit beq
+n 0
+i lit cjump
+r n:put--loop
+i lit emit
+/ dash
+n 45
+i lit mul
+n -1
+: n:put--loop
+i dup lit mod
+n 10
+i lit add
+n 48
+i lit call
+r buff:add
+i lit div
+n 10
+i dup lit neq
+n 0
+i lit cjump
+r n:put--loop
+i drop
+: n:put--out
+i lit call
+r buff:empty?
+i lit cjump
+r n:put--ret
+i lit call
+r buff:pop
+i emit lit jump
+r n:put--out
+: n:put--ret
+i lit call
+r buff:drop
+i lit emit
+n 32
+i ret
+
 / ====================
 / === native words ===
 / ====================
@@ -605,6 +683,10 @@ i ret
 : pr-lit
 i lit
 i bye
+
+: pr-neg
+i neg
+i ret
 
 : pr-add
 i add
@@ -626,6 +708,26 @@ i ret
 i mod
 i ret
 
+: pr-umul
+i umul
+i ret
+
+: pr-udiv
+i udiv
+i ret
+
+: pr-umod
+i umod
+i ret
+
+: pr-rsh
+i rsh
+i ret
+
+: pr-lsh
+i lsh
+i ret
+
 : pr-not
 i not
 i ret
@@ -640,6 +742,14 @@ i ret
 
 : pr-xor
 i xor
+i ret
+
+: pr-null
+i null
+i ret
+
+: pr-nnull
+i nnull
 i ret
 
 : pr-eq
@@ -730,10 +840,6 @@ i ret
 i ret
 i ret
 
-: pr-dot
-i dot
-i ret
-
 : pr-emit
 i emit
 i ret
@@ -750,23 +856,28 @@ i ret
 i bye
 i ret
 
-: n:put
-i dot ret
-
 / ========================
 / === dict starts here ===
 / ========================
 HEADER class:primitive      pr-nop   nop
 HEADER class:primitive-only pr-lit   lit
+HEADER class:primitive      pr-neg   neg
 HEADER class:primitive      pr-add   +
 HEADER class:primitive      pr-sub   -
 HEADER class:primitive      pr-mul   *
 HEADER class:primitive      pr-div   /
 HEADER class:primitive      pr-mod   %
+HEADER class:primitive      pr-umul  u:*
+HEADER class:primitive      pr-udiv  u:/
+HEADER class:primitive      pr-umod  u:%
+HEADER class:primitive      pr-rsh   >>
+HEADER class:primitive      pr-lsh   <<
 HEADER class:primitive      pr-not   not
 HEADER class:primitive      pr-and   and
 HEADER class:primitive      pr-or    or
 HEADER class:primitive      pr-xor   xor
+HEADER class:primitive      pr-null  null?
+HEADER class:primitive      pr-nnull nnull?
 HEADER class:primitive      pr-eq    ==
 HEADER class:primitive      pr-neq   !=
 HEADER class:primitive      pr-lt    <
@@ -789,7 +900,6 @@ HEADER class:primitive-only pr-cjump cjump
 HEADER class:primitive-only pr-call  call
 HEADER class:primitive-only pr-ccall ccall
 HEADER class:primitive-only pr-ret   ret
-HEADER class:primitive      pr-dot   dot
 HEADER class:primitive      pr-emit  emit
 HEADER class:primitive      pr-get   get
 HEADER class:primitive      pr-debug debug
@@ -818,6 +928,7 @@ HEADER class:word    compile:new-word compile:new-word
 HEADER class:word    here             here
 HEADER class:word    prefix:#         prefix:#
 HEADER class:word    prefix::         prefix::
+HEADER class:word    prefix:$         prefix:$
 HEADER class:macro   ;                ;
 HEADER class:word    nl               nl
 HEADER class:word    fetch>           fetch>

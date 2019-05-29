@@ -6,6 +6,7 @@
 #include "opcodes.h"
 
 #define CELL int32_t
+#define UCELL uint32_t
 
 // MiB
 #define MEMORY_SIZE 256*1024
@@ -39,6 +40,9 @@ void inst_nop() {}
 void inst_lit() {
 	stack[sp++] = memory[++ip];
 }
+void inst_neg() {
+	stack[sp-1] = - stack[sp-1];
+}
 void inst_add() {
 	CELL top = stack[--sp];
 	stack[sp-1] += top;
@@ -59,6 +63,26 @@ void inst_mod() {
 	CELL top = stack[--sp];
 	stack[sp-1] %= top;
 }
+void inst_umul() {
+	UCELL top = stack[--sp];
+	stack[sp-1] = ((UCELL)stack[sp-1]) * top;
+}
+void inst_udiv() {
+	UCELL top = stack[--sp];
+	stack[sp-1] = ((UCELL)stack[sp-1]) / top;
+}
+void inst_umod() {
+	UCELL top = stack[--sp];
+	stack[sp-1] = ((UCELL)stack[sp-1]) % top;
+}
+void inst_rsh() {
+	UCELL top = stack[--sp];
+	stack[sp-1] = ((UCELL)stack[sp-1]) >> top;
+}
+void inst_lsh() {
+	CELL top = stack[--sp];
+	stack[sp-1] <<= top;
+}
 void inst_not() {
 	stack[sp-1] = ~stack[sp-1];
 }
@@ -73,6 +97,12 @@ void inst_or() {
 void inst_xor() {
 	CELL top = stack[--sp];
 	stack[sp-1] ^= top;
+}
+void inst_null() {
+	stack[sp-1] = stack[sp-1] == 0 ? -1 : 0;
+}
+void inst_nnull() {
+	stack[sp-1] = stack[sp-1] != 0 ? -1 : 0;
 }
 void inst_eq() {
 	CELL top = stack[--sp];
@@ -200,9 +230,6 @@ void inst_ccall() {
 void inst_ret() {
 	ip = rstack[--rp];
 }
-void inst_dot() {
-	printf("%d ", stack[--sp]);
-}
 void inst_emit() {
 	printf("%c", stack[--sp]);
 }
@@ -287,17 +314,25 @@ void vm_prepare() {
 	instructions[VM_NOP] = inst_nop;
 	instructions[VM_LIT] = inst_lit;
 
+	instructions[VM_NEG] = inst_neg;
 	instructions[VM_ADD] = inst_add;
 	instructions[VM_SUB] = inst_sub;
 	instructions[VM_MUL] = inst_mul;
 	instructions[VM_DIV] = inst_div;
 	instructions[VM_MOD] = inst_mod;
+	instructions[VM_UMUL] = inst_umul;
+	instructions[VM_UDIV] = inst_udiv;
+	instructions[VM_UMOD] = inst_umod;
+	instructions[VM_RSH] = inst_rsh;
+	instructions[VM_LSH] = inst_lsh;
 
 	instructions[VM_NOT] = inst_not;
 	instructions[VM_AND] = inst_and;
 	instructions[VM_OR ] = inst_or;
 	instructions[VM_XOR] = inst_xor;
 
+	instructions[VM_NULL] = inst_null;
+	instructions[VM_NNULL] = inst_nnull;
 	instructions[VM_EQ ] = inst_eq;
 	instructions[VM_NEQ] = inst_neq;
 	instructions[VM_LT ] = inst_lt;
@@ -325,7 +360,6 @@ void vm_prepare() {
 	instructions[VM_CCALL] = inst_ccall;
 	instructions[VM_RET] = inst_ret;
 
-	instructions[VM_DOT] = inst_dot;
 	instructions[VM_EMIT] = inst_emit;
 	instructions[VM_GET] = inst_get;
 	instructions[VM_DEBUG] = inst_debug;
@@ -353,7 +387,7 @@ void vm_parse_args(int argc, char **argv) {
 }
 
 int main(int argc, char **argv) {
-	printf("scooma v0.0.9\n");
+	printf("scooma v0.0.10\n");
 	vm_parse_args(argc, argv);
 	vm_prepare();
 	if (!vm_load(filename_parameter)) {
