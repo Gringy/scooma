@@ -1,4 +1,4 @@
-/ runtime for scooma version 0.0.10
+/ runtime for scooma version 0.0.11
 / created 23.05.2019
 / Gringy egor@kanev.xyz
 
@@ -287,6 +287,16 @@ r dict:find--loop
 : dict:find--success
 i pop drop ret
 
+: dict:last
+/ -- <last-header>
+i lit fetch ret
+r Dict
+
+: dict:set-class
+/ <class> <header> --
+i lit add store ret
+n 1
+
 / s:to-int
 / <string> -- <result-int> <flag-if-done>
 : s:to-int
@@ -517,9 +527,35 @@ i lit lit store ret
 n -1
 r Comp
 
-/ ;
-/ --
+: prefix:&
+/ <string> --
+i lit call
+r dict:find
+/ <header>
+i dup null lit cjump
+r prefix:&--not-found
+i lit call
+r dict:xt
+i lit fetch lit cjump
+r Comp
+r prefix:&--comp
+/ leave xt in stack
+i ret
+: prefix:&--comp
+i lit call
+r compile:lit
+i ret
+: prefix:&--not-found
+i drop lit lit call
+r prefix:&--not-found-string
+r s:put
+i ret
+
+: prefix:&--not-found-string
+s prefix:&: word not found\n
+
 : ;
+/ --
 i lit lit call
 i ret
 r compile:cell
@@ -598,6 +634,49 @@ i lit call
 r here
 i swap store ret
 
+: [
+/ -- <address>
+i lit fetch
+r Comp
+i null lit cjump
+r [--error
+i lit lit call
+i lit jump
+r compile:cell
+i lit fetch
+r Here
+/ address
+i lit lit call
+n 0
+r compile:cell
+i ret
+
+: [--error
+i lit lit call
+r [--error-string
+r s:put
+i ret
+
+: [--error-string
+s [ only works in comp mode\n
+
+: ]
+/ <address> --
+/ end a quote
+i lit lit call
+i ret
+r compile:cell
+/ store address to jump in place has been hold by [
+i dup lit fetch swap
+r Here
+i store
+/ compile lit to push address of quote to stack
+i lit add
+n 1
+i lit call
+r compile:lit
+i ret
+
 : dump
 / <address> --
 i lit
@@ -671,6 +750,25 @@ i lit call
 r buff:drop
 i lit emit
 n 32
+i ret
+
+/ ===================
+/ === combinators ===
+/ ===================
+
+: if
+/ <flag> <quote-if-true> --
+i ccall
+i ret
+
+: choose
+/ <flag> <quote-if-true> <quote-if-false>  --
+i rot lit cjump
+r choose--true
+i swap drop call
+i ret
+: choose--true
+i drop call
 i ret
 
 / ====================
@@ -897,7 +995,7 @@ HEADER class:primitive      pr-fetch fetch
 HEADER class:primitive      pr-store store
 HEADER class:primitive-only pr-jump  jump
 HEADER class:primitive-only pr-cjump cjump
-HEADER class:primitive-only pr-call  call
+HEADER class:primitive      pr-call  call
 HEADER class:primitive-only pr-ccall ccall
 HEADER class:primitive-only pr-ret   ret
 HEADER class:primitive      pr-emit  emit
@@ -915,23 +1013,51 @@ HEADER class:word    number?          number?
 HEADER class:word    s:get            s:get
 HEADER class:word    s:eq?            s:eq?
 HEADER class:word    s:to-int         s:to-int
-HEADER class:word    dict:class       dict:class
-HEADER class:word    dict:xt          dict:xt
-HEADER class:word    dict:name        dict:name
-HEADER class:word    dict:for-each    dict:for-each
-HEADER class:word    dict:words       dict:words
-HEADER class:word    dict:find        dict:find
-HEADER class:word    compile:string   compile:string
-HEADER class:word    compile:cell     compile:cell
-HEADER class:word    compile:header   compile:header
-HEADER class:word    compile:new-word compile:new-word
 HEADER class:word    here             here
-HEADER class:word    prefix:#         prefix:#
-HEADER class:word    prefix::         prefix::
-HEADER class:word    prefix:$         prefix:$
 HEADER class:macro   ;                ;
+HEADER class:macro   ]                ]
+HEADER class:macro   [                [
 HEADER class:word    nl               nl
 HEADER class:word    fetch>           fetch>
 HEADER class:word    n:put            n:put
+HEADER class:word    if               if
+HEADER class:word    choose           choose
+HEADER class:macro   pr-debug         ???
+
+/ dict words
+HEADER class:word    dict:class       dict:class
+HEADER class:word    dict:xt          dict:xt
+HEADER class:word    dict:name        dict:name
+HEADER class:word    dict:set-class   dict:set-class
+HEADER class:word    dict:for-each    dict:for-each
+HEADER class:word    dict:words       dict:words
+HEADER class:word    dict:find        dict:find
+HEADER class:word    dict:last        dict:last
+
+/ prefixes
+HEADER class:word    prefix:#         prefix:#
+HEADER class:word    prefix::         prefix::
+HEADER class:word    prefix:$         prefix:$
+HEADER class:word    prefix:&         prefix:&
+
+/ compile words
+HEADER class:word    compile:string   compile:string
+HEADER class:word    compile:cell     compile:cell
+HEADER class:word    compile:lit      compile:lit
+HEADER class:word    compile:header   compile:header
+HEADER class:word    compile:new-word compile:new-word
+
+/ buffer words
+HEADER class:word    buff:add         buff:add
+HEADER class:word    buff:pop         buff:pop
+HEADER class:word    buff:empty?      buff:empty?
+HEADER class:word    buff:size        buff:size
+HEADER class:word    buff:drop        buff:drop
+
+/ classes
+HEADER class:word    class:word           class:word
+HEADER class:word    class:macro          class:macro
+HEADER class:word    class:primitive      class:primitive
+HEADER class:word    class:primitive-only class:primitive-only
 
 : image_end

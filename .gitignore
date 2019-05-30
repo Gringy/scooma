@@ -1,3 +1,4 @@
 scooma
 *.o
 image.bin
+test.scooma
