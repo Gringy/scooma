@@ -1,4 +1,4 @@
-/ runtime for scooma version 0.0.11
+/ runtime for scooma version 0.1.0
 / created 23.05.2019
 / Gringy egor@kanev.xyz
 
@@ -771,6 +771,30 @@ i ret
 i drop call
 i ret
 
+: n:times
+/ <n> <quote> --
+/ loop from n to 1
+i debug
+i push push
+i debug
+: n:times--loop
+/ r: <quote> <n>
+i pop dup push null
+i lit cjump
+r n:times--end
+/ r: <quote> <n>
+i pop pop dup mrot
+/ <n> <quote> -> <n> <quote> <quote> -> <quote> <n> <quote>
+i push push call
+i pop pop swap lit
+n 1
+i sub swap push push
+i lit jump
+r n:times--loop
+: n:times--end
+i pop pop drop drop
+i ret
+
 / ====================
 / === native words ===
 / ====================
@@ -1022,6 +1046,7 @@ HEADER class:word    fetch>           fetch>
 HEADER class:word    n:put            n:put
 HEADER class:word    if               if
 HEADER class:word    choose           choose
+HEADER class:word    n:times          n:times
 HEADER class:macro   pr-debug         ???
 
 / dict words

@@ -18,14 +18,15 @@ def place():
 		memory.append(0)
 
 def compileAt(n, num):
-	memory[n  ] = num & 0xFF
-	memory[n+1] = (num>>8) & 0xFF
-	memory[n+2] = (num>>16) & 0xFF
-	memory[n+3] = (num>>24) & 0xFF
+	byte = n*4
+	memory[byte  ] = num & 0xFF
+	memory[byte+1] = (num>>8) & 0xFF
+	memory[byte+2] = (num>>16) & 0xFF
+	memory[byte+3] = (num>>24) & 0xFF
 
 def compile(num):
 	place()
-	compileAt(len(memory)-4, num)
+	compileAt(top()-1, num)
 
 def compile_string(str):
 	for ch in str:
@@ -124,7 +125,7 @@ def passLinks():
 	for address in places:
 		needed = places[address]
 		try:
-			compileAt(address*4, links[needed])
+			compileAt(address, links[needed])
 		except:
 			print("there is no links with name {0}".format(needed))
 			exit(1)
@@ -134,7 +135,7 @@ def writeFile(name):
 	outFile.write(bytearray(memory))
 
 def main():
-	print("asm for scooma v0.0.11")
+	print("asm for scooma v0.1.0")
 	if len(sys.argv) == 2:
 		importCodes()
 		readFile(sys.argv[1])

@@ -241,12 +241,12 @@ void inst_debug() {
 	printf("==============================\n");
 	printf("ip:%d\n", ip);
 
-	printf("stack %d: [", sp);
+	printf(" stack %d: [", sp);
 	for (int i = 0; i < sp; i++)
 		printf("%d ", stack[i]);
 	printf("]\n");
 
-	printf("rstack: [");
+	printf("rstack %d: [", rp);
 	for (int i = 0; i < rp; i++)
 		printf("%d ", rstack[i]);
 	printf("]\n");
@@ -387,7 +387,7 @@ void vm_parse_args(int argc, char **argv) {
 }
 
 int main(int argc, char **argv) {
-	printf("scooma v0.0.11\n");
+	printf("scooma v0.1.0\n");
 	vm_parse_args(argc, argv);
 	vm_prepare();
 	if (!vm_load(filename_parameter)) {
